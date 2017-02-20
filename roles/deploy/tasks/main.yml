@@ -2,3 +2,29 @@
 
 - name: Copy webapp on to the server
   copy: src=files/ dest=/var/www/html/
+
+- name: Append maintenance config to httpd.conf
+  blockinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    block: |
+      #Maintenance block
+      RewriteEngine On
+      RewriteCond %{REMOTE_ADDR} !^{{public_ip_httpd}}
+      RewriteCond %{DOCUMENT_ROOT}/maintenance.html -f
+      RewriteCond %{DOCUMENT_ROOT}/maintenance.enable -f
+      RewriteCond %{SCRIPT_FILENAME} !maintenance.html
+      RewriteRule ^.*$ /maintenance.html [R=503,L]
+      ErrorDocument 503 /maintenance.html
+      Header Set Cache-Control "max-age=0, no-store"
+    backup: yes
+  notify: reload apache
+
+- name: Add maintenance.enable file
+  file: path=/var/www/html/maintenance.enable state=touch mode=0600
+  when: mflag == 1
+  tags: maintenance
+
+- name: Delete maintenance.enable file
+  file: path=/var/www/html/maintenance.enable state=absent
+  when: mflag == 0
+  tags: maintenance

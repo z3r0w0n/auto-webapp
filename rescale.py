@@ -3,11 +3,18 @@
 import os
 import sys
 import yaml
+import json
 
 import variables as vars
+import common
+
+def print_url():
+    public_ip = common.get_publicip()
+    if public_ip:
+        print("WebApp URL: http://"+public_ip)
 
 def print_usage():
-    print("Usage: ./rescale.py [up, down]")
+    print("Usage: ./rescale.py [up, down, config]")
 
 def gen_tfvars(var_file):
     try:
@@ -28,18 +35,30 @@ def gen_tfvars(var_file):
         return False
 
 
-def run_ansible(config_dir):
+def run_ansible(config_dir, mflag=0, tags=""):
     ret = os.system("python utils/gen_inventory.py")
     if ret != 0:
         print("ERROR: Error creating Ansible inventory")
-        sys.exit(1)
+        return False
     print("Success: hosts file created")
 
     ansible_inventory = os.path.join(config_dir, 'hosts')
-    ret = os.system("ansible-playbook -i "+ansible_inventory+" play.yml")
+
+    extra_vars = {}
+    public_ip = common.get_publicip()
+    extra_vars['public_ip'] = public_ip
+    extra_vars['public_ip_httpd'] = public_ip.replace('.','\.' )
+    extra_vars['mflag'] = mflag
+
+    cmd = "ansible-playbook --extra-vars '"+ str(json.dumps(extra_vars)) +"' -i "+ansible_inventory+" play.yml"
+    if tags:
+        cmd += ' --tags "'+tags+'"'
+
+    ret = os.system(cmd)
     if ret != 0:
         print("ERROR: Error running Ansible playbook")
-        sys.exit(1)
+        return False
+    return True
 
 def run_terraform(action, terraform_dir):
     ret = 1
@@ -71,7 +90,18 @@ if __name__ == "__main__":
 
     if action == "up":
         if run_terraform("up", terraform_dir):
-            aflag = run_ansible(config_dir)
+            if run_ansible(config_dir):
+                print("Webapp deployed successfully ###################################")
+                print_url()
 
     if action == "down":
         run_terraform("down", terraform_dir)
+
+    if action == "config":
+        run_ansible(config_dir)
+
+    if action == "start503":
+        run_ansible(config_dir, mflag=1, tags="maintenance")
+
+    if action == "stop503":
+        run_ansible(config_dir, mflag=0, tags="maintenance")
