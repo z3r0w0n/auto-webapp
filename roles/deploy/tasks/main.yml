@@ -1,7 +1,7 @@
 ---
 
-- name: Copy webapp on to the server
-  copy: src=files/ dest=/var/www/html/
+- name: Clone webapp to the host
+  git: repo={{ webapp_repo }} dest=/var/www/html/ version=master clone=yes
 
 - name: Append maintenance config to httpd.conf
   blockinfile:

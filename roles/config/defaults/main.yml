@@ -3,3 +3,4 @@
 yum_packages:
   - httpd
   - mod_ssl
+  - git-all

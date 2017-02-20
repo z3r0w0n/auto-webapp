@@ -14,13 +14,12 @@ def print_url():
         print("WebApp URL: http://"+public_ip)
 
 def print_usage():
-    print("Usage: ./rescale.py [up, down, config]")
+    print("Usage: ./rescale.py [up, down, config, start503, stop503]")
 
 def gen_tfvars(var_file):
     try:
         print("Generating tfvars file for Terraform ###########################")
-        with open("config.yml", 'r') as yml_config:
-            config = yaml.load(yml_config)
+        config = common.get_config()
 
         tfvars_contents = ""
         for key,val in config.items():
@@ -49,6 +48,8 @@ def run_ansible(config_dir, mflag=0, tags=""):
     extra_vars['public_ip'] = public_ip
     extra_vars['public_ip_httpd'] = public_ip.replace('.','\.' )
     extra_vars['mflag'] = mflag
+
+    extra_vars.update(common.get_config('webapp_repo'))
 
     cmd = "ansible-playbook --extra-vars '"+ str(json.dumps(extra_vars)) +"' -i "+ansible_inventory+" play.yml"
     if tags:
