@@ -6,8 +6,12 @@ import yaml
 
 import variables as vars
 
+def print_usage():
+    print("Usage: ./rescale.py [up, down]")
+
 def gen_tfvars(var_file):
     try:
+        print("Generating tfvars file for Terraform ###########################")
         with open("config.yml", 'r') as yml_config:
             config = yaml.load(yml_config)
 
@@ -29,6 +33,7 @@ def run_ansible(config_dir):
     if ret != 0:
         print("ERROR: Error creating Ansible inventory")
         sys.exit(1)
+    print("Success: hosts file created")
 
     ansible_inventory = os.path.join(config_dir, 'hosts')
     ret = os.system("ansible-playbook -i "+ansible_inventory+" play.yml")
@@ -36,17 +41,26 @@ def run_ansible(config_dir):
         print("ERROR: Error running Ansible playbook")
         sys.exit(1)
 
-def run_terraform(terraform_dir):
-    if gen_tfvars(var_file):
-        cmd = "terraform apply -var-file " + var_file + " -state " + state_file + " -state-out " + out_state_file + " " + terraform_dir
-        # cmd = "terraform destroy -var-file " + var_file + " -state " + state_file + " -state-out " + out_state_file + " " + terraform_dir
-        ret = os.system(cmd)
+def run_terraform(action, terraform_dir):
+    ret = 1
+    if action=="up":
+        if gen_tfvars(var_file):
+            print("Success: tfvars file created")
+            cmd = "terraform apply -var-file " + var_file + " -state " + state_file + " -state-out " + out_state_file + " " + terraform_dir
+    elif action=="down":
+        cmd = "terraform destroy -var-file " + var_file + " -state " + state_file + " -state-out " + out_state_file + " " + terraform_dir
+    ret = os.system(cmd)
     if ret != 0 :
-        print("ERROR [Terraform]: Failure while provisioning. Exiting.")
+        print("ERROR [Terraform]: Failure while running Terraform. Exiting.")
         sys.exit(1)
     return True
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print_usage()
+        sys.exit(1)
+
+    action = sys.argv[1]
 
     config_dir = vars.config_dir
     terraform_dir = vars.terraform_dir
@@ -55,5 +69,9 @@ if __name__ == "__main__":
     state_file = vars.state_file
     out_state_file = vars.out_state_file
 
-    if run_terraform(terraform_dir):
-        aflag = run_ansible(config_dir)
+    if action == "up":
+        if run_terraform("up", terraform_dir):
+            aflag = run_ansible(config_dir)
+
+    if action == "down":
+        run_terraform("down", terraform_dir)
