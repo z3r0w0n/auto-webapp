@@ -1,4 +1,4 @@
-cluster_name: rescale
+clustername: rescale
 
 # Change this to your pem file
 private_key_path: "/path/to/key.pem"
@@ -6,6 +6,8 @@ private_key_path: "/path/to/key.pem"
 # AWS instance
 region: "us-west-2"
 instance_type: "t2.micro"
+instance_count: 1
+# ami_id: "ami-d2c924b2"
 ssh_user: "centos"
 
 # Directories
