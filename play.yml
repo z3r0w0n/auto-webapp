@@ -1,0 +1,9 @@
+# Playbook to configure and deploy sample webapp
+
+- hosts:
+  - app-servers
+  become: yes
+  become_method: sudo
+  roles:
+    - config
+    - deploy

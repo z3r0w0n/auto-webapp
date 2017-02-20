@@ -1,0 +1,4 @@
+---
+
+- name: Copy webapp on to the server
+  copy: src=files/ dest=/var/www/html/

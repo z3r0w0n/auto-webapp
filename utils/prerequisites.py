@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Assuming this is being run on Mac OS X
 import os
 

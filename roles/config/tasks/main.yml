@@ -1,0 +1,7 @@
+---
+
+- name: Install required yum packages
+  yum: pkg={{ item }} state=present update_cache=yes
+  with_items: "{{ yum_packages }}"
+  notify: start apache
+  tags: installation
